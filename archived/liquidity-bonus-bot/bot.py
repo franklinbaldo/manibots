@@ -18,15 +18,13 @@ def should_exploit(market):
     if len(mf.get_bets(market=market.slug, username=USERNAME)) > 0:
         return False
     # Skip markets with any limit orders
-    if any(b.limitProb != None for b in mf.get_bets(market=market.slug)):
-        return False
-    return True
+    return all(b.limitProb is None for b in mf.get_bets(market=market.slug))
 
 def exploit(market):
     outcome = "YES" if market.probability <= 0.5 else "NO"
     amount = 1000
     mf.make_bet(API_KEY, amount, market.id, outcome)
-    for i in range(20):
+    for _ in range(20):
         if mf.get_market(market.id).totalLiquidity != market.totalLiquidity:
             break
         sleep(0.2)

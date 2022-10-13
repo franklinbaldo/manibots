@@ -90,7 +90,7 @@ def main():
     while True:
         try:
             make_bets(mf.get_slug(MARKET_SLUG))
-            print(f'Waiting for a new trade')
+            print('Waiting for a new trade')
             while mf.get_slug(MARKET_SLUG).bets[0].userId == USER_ID:
                 sleep(5)
             if mf.get_slug(MARKET_SLUG).bets[0].userId not in OTHER_BOTS:
