@@ -34,9 +34,8 @@ class Backoff:
     def should_fire(self):
         if random.randrange(self.t) > 0:
             return False
-        else:
-            self.t = min(self.t * 2, MAX_BACKOFF)
-            return True
+        self.t = min(self.t * 2, MAX_BACKOFF)
+        return True
 
 class Group:
     def __init__(self, name, d):
@@ -56,7 +55,7 @@ class Group:
             y2, n2 = hyperbolic_to_cartesian(p, r, phi + dphi)
             profit = self.compute_profit_outcomes(y - y2, n - n2)
             return -np.min(profit)
-        
+
         # res = sp.optimize.minimize(f, method='CG', jac=True, x0=[-0.01, 0, 0.0263, 0, 0, 0])
         res = sp.optimize.differential_evolution(f, [(-1, 1)] * len(p))
 
@@ -65,25 +64,24 @@ class Group:
             profit = self.compute_profit_outcomes(y - y2, n - n2)
             return profit, y2, n2
         else:
-            raise Exception('' + res.message + '\n' + str(res))
+            raise Exception(f'{res.message}' + '\n' + str(res))
 
     def arbitrage(self):
         if not self.backoff.should_fire(): 
             return
-        
+
         print()
         print(f'=== {self.name} ===')
 
         while True:
             markets = [mf.get_slug(slug) for slug in self.slugs]
             for m in markets:
-                skip = skip_market(m)
-                if skip:
+                if skip := skip_market(m):
                     print(skip)
                     print('Skipping group.')
                     self.backoff.reset()
                     return
-            
+
             p = np.array([m.p for m in markets])
             y, n = get_shares(markets)
             print('Prior probs:    ', prob_from_cartesian(p, y, n))
@@ -103,12 +101,12 @@ class Group:
                 elif shares[i] < -0.5:
                     print(f'  Buy {-shares[i]} NO for M${y2[i] - y[i]}')
                 else:
-                    print(f'  Do not trade')
-            
+                    print('  Do not trade')
+
             self.backoff.reset()
 
             # TODO: make sure we can afford it!
-            
+
             if CONFIRM_BETS and input('Proceed? (y/n)') != 'y':
                 return
 
@@ -116,7 +114,7 @@ class Group:
             if not np.allclose((y, n), get_shares([mf.get_slug(slug) for slug in self.slugs])):
                 print('Markets have moved!\nSkipping group.')
                 return
-            
+
             if API_KEY:
                 for i, m in shuffled(enumerate(markets)):
                     if shares[i] > 0.5:
